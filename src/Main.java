@@ -13,9 +13,10 @@ public class Main {
             // Se non funziona, usa il look and feel di default
         }
         // Avvia la GUI sul thread dedicato all'interfaccia grafica (EDT)
+        // Mostra prima la finestra di login; la MainFrame si aprirà solo dopo un login corretto.
         SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame();
-            frame.setVisible(true);
+            LoginFrame loginFrame = new LoginFrame();
+            loginFrame.setVisible(true);
         });
     }
 }
