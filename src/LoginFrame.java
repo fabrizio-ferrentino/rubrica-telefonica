@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.sql.SQLException;
 
 /**
  * Finestra di login dell'applicazione Rubrica.
@@ -55,7 +56,13 @@ public class LoginFrame extends JFrame {
 
         // --- Azioni ---
         // Clic sul bottone
-        btnLogin.addActionListener(e -> effettuaLogin());
+        btnLogin.addActionListener(e -> {
+            try {
+                effettuaLogin();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
 
         // --- Assembla finestra ---
         add(pannelloCampi, BorderLayout.CENTER);
@@ -71,7 +78,7 @@ public class LoginFrame extends JFrame {
      * Se corretto: chiude questa finestra e apre la MainFrame.
      * Se errato: mostra un messaggio di errore e svuota la password.
      */
-    private void effettuaLogin() {
+    private void effettuaLogin() throws SQLException {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
 

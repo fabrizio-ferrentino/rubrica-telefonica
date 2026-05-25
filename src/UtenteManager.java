@@ -1,65 +1,36 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
-import java.util.Vector;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
- * Gestisce la lista degli utenti e la verifica delle credenziali di login.
- * Carica gli utenti dal file "utenti.txt".
- * Se il file non esiste, viene usato un utente di default (admin/admin).
- * Formato file: username;password (una coppia per riga)
+ * Gestisce la verifica delle credenziali di login leggendo la tabella
+ * "utenti" del database MySQL.
+ *
+ * Sostituisce la vecchia versione che leggeva da file "utenti.txt".
  */
 public class UtenteManager {
 
-    private Vector<Utente> utenti;
-    private static final String FILE_PATH = "utenti.txt";
-
-    public UtenteManager() {
-        utenti = new Vector<>();
-        caricaDaFile();
-
-        // Se il file non esiste o è vuoto, crea un utente di default
-        if (utenti.isEmpty()) {
-            utenti.add(new Utente("admin", "admin"));
-        }
-    }
-
     /**
-     * Verifica se le credenziali fornite corrispondono a un utente esistente.
+     * Verifica se username e password corrispondono ad un utente esistente
+     * nella tabella "utenti".
      *
-     * @param username username inserito dall'utente
-     * @param password password inserita dall'utente
-     * @return true se le credenziali sono corrette, false altrimenti
+     * @return true se le credenziali sono corrette
+     * @throws SQLException se ci sono problemi di connessione o di query
+     *         (il chiamante deve mostrarli all'utente)
      */
-    public boolean verificaCredenziali(String username, String password) {
-        for (Utente u : utenti) {
-            if (u.getUsername().equals(username) && u.getPassword().equals(password)) {
-                return true;
+    public boolean verificaCredenziali(String username, String password) throws SQLException {
+        String sql = "SELECT id FROM utenti WHERE username = ? AND password = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next(); // true se la query ha trovato almeno una riga
             }
-        }
-        return false;
-    }
-
-    /**
-     * Carica gli utenti dal file utenti.txt.
-     * Se il file non esiste, non fa nulla e non genera errori.
-     */
-    private void caricaDaFile() {
-        File file = new File(FILE_PATH);
-        if (!file.exists()) return;
-
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String riga = scanner.nextLine().trim();
-                if (riga.isEmpty()) continue;
-
-                String[] parti = riga.split(";");
-                if (parti.length == 2) {
-                    utenti.add(new Utente(parti[0], parti[1]));
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("Errore apertura file utenti: " + e.getMessage());
         }
     }
 }

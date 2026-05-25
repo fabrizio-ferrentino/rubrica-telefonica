@@ -1,40 +1,106 @@
-import java.io.*;
-import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Vector;
 
 /**
- * Gestisce la lista di persone e la persistenza su file.
- * Questo è il "layer logico" dell'applicazione.
+ * Gestisce la lista di persone e la persistenza su DATABASE MySQL.
+ *
+ * Mantiene una cache in memoria (Vector) che rispecchia il contenuto
+ * della tabella "persone": viene popolata al primo avvio con una SELECT
+ * e aggiornata in sincrono dopo ogni INSERT / UPDATE / DELETE.
+ *
+ * In questo modo l'interfaccia grafica (MainFrame) non deve cambiare:
+ * continua ad usare gli stessi metodi pubblici della vecchia versione.
  */
 public class RubricaManager {
 
     private Vector<Persona> persone;
-    private static final String FILE_PATH = "informazioni.txt";
 
     public RubricaManager() {
         persone = new Vector<>();
-        caricaDaFile(); // carica i dati all'avvio
+        caricaDaDatabase();
     }
 
     // CRUD
     public void aggiungiPersona(Persona p) {
-        persone.add(p);
-        salvaSuFile();
+        String sql = "INSERT INTO persone (nome, cognome, indirizzo, telefono, eta) "
+                   + "VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, p.getNome());
+            ps.setString(2, p.getCognome());
+            ps.setString(3, p.getIndirizzo());
+            ps.setString(4, p.getTelefono());
+            ps.setInt   (5, p.getEta());
+
+            ps.executeUpdate();
+
+            // Recupera l'id generato dal database e lo associa all'oggetto
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    p.setId(rs.getInt(1));
+                }
+            }
+
+            // Aggiorna anche la cache in memoria
+            persone.add(p);
+
+        } catch (SQLException e) {
+            System.err.println("Errore INSERT persona: " + e.getMessage());
+        }
     }
 
     public void modificaPersona(int indice, Persona nuoviDati) {
         Persona p = persone.get(indice);
-        p.setNome(nuoviDati.getNome());
-        p.setCognome(nuoviDati.getCognome());
-        p.setIndirizzo(nuoviDati.getIndirizzo());
-        p.setTelefono(nuoviDati.getTelefono());
-        p.setEta(nuoviDati.getEta());
-        salvaSuFile();
+
+        String sql = "UPDATE persone "
+                   + "SET nome = ?, cognome = ?, indirizzo = ?, telefono = ?, eta = ? "
+                   + "WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, nuoviDati.getNome());
+            ps.setString(2, nuoviDati.getCognome());
+            ps.setString(3, nuoviDati.getIndirizzo());
+            ps.setString(4, nuoviDati.getTelefono());
+            ps.setInt   (5, nuoviDati.getEta());
+            ps.setInt   (6, p.getId());
+
+            ps.executeUpdate();
+
+            // Aggiorna la cache in memoria
+            p.setNome(nuoviDati.getNome());
+            p.setCognome(nuoviDati.getCognome());
+            p.setIndirizzo(nuoviDati.getIndirizzo());
+            p.setTelefono(nuoviDati.getTelefono());
+            p.setEta(nuoviDati.getEta());
+
+        } catch (SQLException e) {
+            System.err.println("Errore UPDATE persona: " + e.getMessage());
+        }
     }
 
     public void eliminaPersona(int indice) {
-        persone.remove(indice);
-        salvaSuFile();
+        Persona p = persone.get(indice);
+        String sql = "DELETE FROM persone WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, p.getId());
+            ps.executeUpdate();
+
+            persone.remove(indice);
+
+        } catch (SQLException e) {
+            System.err.println("Errore DELETE persona: " + e.getMessage());
+        }
     }
 
     public Persona getPersona(int indice) {
@@ -51,56 +117,32 @@ public class RubricaManager {
 
     // PERSISTENZA
     /**
-     * Carica i contatti dal file informazioni.txt all'avvio.
-     * Se il file non esiste, non fa nulla.
-     * Formato: nome;cognome;indirizzo;telefono;eta
+     * Carica tutte le persone dalla tabella "persone" e popola la cache.
+     * Eventuali errori vengono solo loggati: l'applicazione parte comunque.
      */
-    private void caricaDaFile() {
-        File file = new File(FILE_PATH);
-        if (!file.exists()) return; // nessun errore se il file non esiste
+    private void caricaDaDatabase() {
+        persone.clear();
 
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String riga = scanner.nextLine().trim();
-                if (riga.isEmpty()) continue;
+        String sql = "SELECT id, nome, cognome, indirizzo, telefono, eta "
+                   + "FROM persone ORDER BY id";
 
-                String[] parti = riga.split(";");
-                if (parti.length == 5) {
-                    try {
-                        String nome      = parti[0];
-                        String cognome   = parti[1];
-                        String indirizzo = parti[2];
-                        String telefono  = parti[3];
-                        int eta          = Integer.parseInt(parti[4]);
-                        persone.add(new Persona(nome, cognome, indirizzo, telefono, eta));
-                    } catch (NumberFormatException e) {
-                        // riga malformata, la saltiamo
-                        System.err.println("Riga non valida nel file: " + riga);
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("Errore apertura file: " + e.getMessage());
-        }
-    }
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-    /**
-     * Salva tutti i contatti su file dopo ogni modifica.
-     * Sovrascrive completamente il file.
-     */
-    private void salvaSuFile() {
-        try (PrintStream ps = new PrintStream(new FileOutputStream(FILE_PATH))) {
-            for (Persona p : persone) {
-                ps.println(
-                        p.getNome()      + ";" +
-                                p.getCognome()   + ";" +
-                                p.getIndirizzo() + ";" +
-                                p.getTelefono()  + ";" +
-                                p.getEta()
+            while (rs.next()) {
+                Persona p = new Persona(
+                        rs.getString("nome"),
+                        rs.getString("cognome"),
+                        rs.getString("indirizzo"),
+                        rs.getString("telefono"),
+                        rs.getInt   ("eta")
                 );
+                p.setId(rs.getInt("id"));
+                persone.add(p);
             }
-        } catch (FileNotFoundException e) {
-            System.err.println("Errore salvataggio file: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Errore caricamento persone dal database: " + e.getMessage());
         }
     }
 }

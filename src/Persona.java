@@ -1,4 +1,5 @@
 public class Persona {
+    private int id;
     private String nome;
     private String cognome;
     private String indirizzo;
@@ -14,6 +15,7 @@ public class Persona {
     }
 
     // Getter
+    public int    getId()        { return id; }
     public String getNome()      { return nome; }
     public String getCognome()   { return cognome; }
     public String getIndirizzo() { return indirizzo; }
@@ -21,6 +23,7 @@ public class Persona {
     public int    getEta()       { return eta; }
 
     // Setter
+    public void setId(int id)                  { this.id = id; }
     public void setNome(String nome)           { this.nome = nome; }
     public void setCognome(String cognome)     { this.cognome = cognome; }
     public void setIndirizzo(String indirizzo) { this.indirizzo = indirizzo; }
