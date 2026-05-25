@@ -17,40 +17,53 @@ public class LoginFrame extends JFrame {
         utenteManager = new UtenteManager();
 
         setTitle("Login - Rubrica Telefonica");
-        setSize(320, 210);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // centrata nello schermo
         setResizable(false);
 
         // --- Campi username e password ---
-        JPanel pannelloCampi = new JPanel(new GridLayout(2, 2, 10, 8));
-        pannelloCampi.setBorder(BorderFactory.createEmptyBorder(25, 25, 10, 25));
+        JPanel pannelloCampi = new JPanel(new GridBagLayout());
+        pannelloCampi.setBorder(BorderFactory.createEmptyBorder(20, 25, 10, 25));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // Spazio tra i componenti
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        txtUsername = new JTextField();
-        txtPassword = new JPasswordField();
+        txtUsername = new JTextField(15);
+        txtPassword = new JPasswordField(15);
 
-        pannelloCampi.add(new JLabel("Username:"));
-        pannelloCampi.add(txtUsername);
-        pannelloCampi.add(new JLabel("Password:"));
-        pannelloCampi.add(txtPassword);
+        // Riga 0: Username
+        gbc.gridx = 0; gbc.gridy = 0;
+        pannelloCampi.add(new JLabel("Username:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 0;
+        pannelloCampi.add(txtUsername, gbc);
+
+        // Riga 1: Password
+        gbc.gridx = 0; gbc.gridy = 1;
+        pannelloCampi.add(new JLabel("Password:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 1;
+        pannelloCampi.add(txtPassword, gbc);
 
         // --- Bottone LOGIN ---
-        JButton btnLogin = new JButton("LOGIN");
-        btnLogin.setPreferredSize(new Dimension(120, 34));
+        JPanel pannelloBottoni = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        pannelloBottoni.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-        JPanel pannelloBottone = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        pannelloBottone.add(btnLogin);
+        JButton btnLogin = new JButton("Login", IconUtils.iconaLogin());
+        btnLogin.setFocusPainted(false);
+        // Premi Invio per attivare il bottone di default
+        getRootPane().setDefaultButton(btnLogin);
+
+        pannelloBottoni.add(btnLogin);
 
         // --- Azioni ---
         // Clic sul bottone
         btnLogin.addActionListener(e -> effettuaLogin());
 
-        // Premere Invio nel campo password fa scattare il login
-        txtPassword.addActionListener(e -> effettuaLogin());
-
         // --- Assembla finestra ---
         add(pannelloCampi, BorderLayout.CENTER);
-        add(pannelloBottone, BorderLayout.SOUTH);
+        add(pannelloBottoni, BorderLayout.SOUTH);
+
+        // pack() calcola la dimensione perfetta in base ai componenti interni
+        pack();
+        setLocationRelativeTo(null);
     }
 
     /**

@@ -36,24 +36,31 @@ public class MainFrame extends JFrame {
         tabella.getTableHeader().setReorderingAllowed(false);
 
         JScrollPane scrollPane = new JScrollPane(tabella);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
-        // Bottoni
-        JButton btnNuovo    = new JButton("Nuovo");
-        JButton btnModifica = new JButton("Modifica");
-        JButton btnElimina  = new JButton("Elimina");
-
-        btnNuovo.setPreferredSize(new Dimension(130, 34));
-        btnModifica.setPreferredSize(new Dimension(130, 34));
-        btnElimina.setPreferredSize(new Dimension(130, 34));
+        // --- Bottoni ---
+        JButton btnNuovo    = new JButton("Nuovo",    IconUtils.iconaNuovo());
+        JButton btnModifica = new JButton("Modifica", IconUtils.iconaModifica());
+        JButton btnElimina  = new JButton("Elimina",  IconUtils.iconaElimina());
 
         // colore rosso per il bottone elimina
         btnElimina.setForeground(new Color(180, 30, 30));
 
-        JPanel pannelloBottoni = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
-        pannelloBottoni.add(btnNuovo);
-        pannelloBottoni.add(btnModifica);
-        pannelloBottoni.add(btnElimina);
+        btnNuovo.setFocusPainted(false);
+        btnModifica.setFocusPainted(false);
+        btnElimina.setFocusPainted(false);
+
+        // --- Toolbar ---
+        JToolBar toolbar = new JToolBar();
+        toolbar.setFloatable(false); // non staccabile dalla finestra
+        toolbar.setRollover(true);
+        toolbar.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+
+        toolbar.add(btnNuovo);
+        toolbar.addSeparator();
+        toolbar.add(btnModifica);
+        toolbar.addSeparator();
+        toolbar.add(btnElimina);
 
         // Azioni
         btnNuovo.addActionListener(e -> apriNuovoContatto());
@@ -61,8 +68,8 @@ public class MainFrame extends JFrame {
         btnElimina.addActionListener(e -> eliminaContatto());
 
         // Assembla finestra
+        add(toolbar,    BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
-        add(pannelloBottoni, BorderLayout.SOUTH);
 
         // Carica dati iniziali nella tabella
         aggiornaTabella();

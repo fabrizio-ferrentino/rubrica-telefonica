@@ -43,13 +43,21 @@ public class EditorPersonaDialog extends JDialog {
         pannelloCampi.add(new JLabel("Età:"));
         pannelloCampi.add(txtEta);
 
-        // Bottoni
-        JButton btnSalva   = new JButton("Salva");
-        JButton btnAnnulla = new JButton("Annulla");
+        //--- Bottoni --
+        JButton btnSalva   = new JButton("Salva",   IconUtils.iconaSalva());
+        JButton btnAnnulla = new JButton("Annulla", IconUtils.iconaAnnulla());
 
-        JPanel pannelloBottoni = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
-        pannelloBottoni.add(btnAnnulla);
-        pannelloBottoni.add(btnSalva);
+        btnSalva.setFocusPainted(false);
+        btnAnnulla.setFocusPainted(false);
+
+        JToolBar toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        toolbar.setRollover(true);
+        toolbar.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+
+        toolbar.add(btnSalva);
+        toolbar.addSeparator();
+        toolbar.add(btnAnnulla);
 
         // Se modifica: precompila i campi
         if (persona != null) {
@@ -74,8 +82,8 @@ public class EditorPersonaDialog extends JDialog {
         });
 
         // Assembla finestra
+        add(toolbar,       BorderLayout.NORTH);
         add(pannelloCampi, BorderLayout.CENTER);
-        add(pannelloBottoni, BorderLayout.SOUTH);
     }
 
     /**
