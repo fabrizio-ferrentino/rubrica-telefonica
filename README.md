@@ -2,6 +2,8 @@
 
 A Java desktop application for managing personal contacts, built with a **Swing** GUI and **MySQL** persistence via JDBC.
 
+> ℹ️ This project was created as a demo for **WebTuring.net**
+
 ## ✨ Features
 
 - **View** contacts in a table
